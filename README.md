@@ -4,11 +4,11 @@
 Please find Published report of this project [here](http://rpubs.com/more11neha/Data_Prep) in Rpubs.
 
 
-*Aim:*
+**Aim:**
 
 This Mini Project involves data preparation of dataset cencus_income.csv in order to make it fit for futher analysis and model building.
 
-*Description:*
+**Description:**
 
 1. Creating dummy variable for character variables.
 
@@ -18,7 +18,7 @@ This Mini Project involves data preparation of dataset cencus_income.csv in orde
 
 4. Converting the target Variable.(Y)
 
-*Data Information:*
+**Data Information:**
 
 census_income.csv is a csv file containing 32561 obs and 15 variables.
 
