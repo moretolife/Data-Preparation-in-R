@@ -1,0 +1,252 @@
+---
+title: "Data Preparation in R"
+author: "Executed by Neha More"
+date: "November 15, 2017"
+output: html_document
+---
+
+
+
+---
+
+###Aim:
+####This Mini Project involves data preparation of dataset cencus_income.csv in order to make it fit for futher analysis and model building.
+
+###Description:
+1. Creating dummy variable for character variables.
+2. Grouping similar category variables and making dummies.
+3. Dealing with flag variables.(for numeric variables)
+4. Converting the target Variable.(Y)
+
+###Data Information:
+census_income.csv is a csv file containing 32561 obs and 15 variables.It describes the income range of people with their characteristic attributes.The income range of people is >50k and <=50k which is stored in target variable Y.
+We need to prepare data for the remaining (14) variables which can be further usefull in building models.
+
+
+###Initial setup
+loading library dplyr
+```{r message=FALSE}
+library(dplyr)
+```
+reading file census_income.csv into d
+```{r}
+d=read.csv("census_income.csv",stringsAsFactors = F)
+View(d)
+```
+variables in d are as follows:
+```{r}
+names(d)
+```
+structure of dataset is:
+```{r}
+glimpse(d)
+```
+The dataset includes 9 character variables namely workclass, education, marital.status,  occupation, relationship, race, sex, native.country and Y(target variable) which needs to be converted accordingly in order to make it fit for modelling.
+
+lets summarise the dataset
+```{r}
+summary(d)
+```
+finding out the number of distinct caztegories in each 8 character variables.(excludes Y as its the target variable)
+```{r}
+for(i in 1:ncol(d)){
+  if(class(d[,i])=="character"){
+    if(names(d)[i]!="Y"){
+      message=paste("Number of categories in ",names(d)[i]," : ")
+      num.cat=length(unique(d[,i]))
+      print(paste0(message,num.cat))
+    }
+  }
+}
+```
+###1. Creating dummy variable : (for variables having 6 or <6 categories:relationship,race,sex)
+####creating dummy variable for race:
+```{r}
+table(d$race)
+
+```
+lets create 4 dummy variables considering others as base variable.
+```{r}
+d=d%>%
+  mutate(race_AIE=as.numeric(race==" Amer-Indian-Eskimo"),
+         race_API=as.numeric(race==" Asian-Pac-Islander"),
+         race_Black=as.numeric(race==" Black"),
+         race_White=as.numeric(race==" White")) %>% 
+  select(-race)
+```
+####lets create dummy for sex(2category)
+```{r}
+table(d$sex)
+nchar(d$sex[2]) #:there was space in the string of male and female.
+```
+```{r}
+d=d %>% 
+  mutate(sex_Female=as.numeric(sex==" Female"),
+         sex_Male=as.numeric(sex==" Male")) %>% 
+  select(-sex)
+```
+####lets create dummy for relationship(6category)
+```{r}
+table(d$relationship)
+
+```
+```{r}
+d=d %>% 
+  mutate(rel_h=as.numeric(relationship==" Husband"),
+         rel_nif=as.numeric(relationship==" Not-in-family"),
+         rel_oc=as.numeric(relationship==" Own-child"),
+         rel_um=as.numeric(relationship==" Unmarried"),
+         rel_w=as.numeric(relationship==" Wife")) %>%
+  select(-relationship)
+```
+here other relative were taken as base variable and 5 dummies were made.
+
+###2. Dummies for variables having similar categories.
+####When categories present in a variable are too many,we group similar categories and then make dummies.
+####combining similar category of variable workclass and making dummies:
+```{r}
+table(d$workclass)
+```
+here no of categories:9
+dummy variables:8 but that too much hence we combine similar categories.
+```{r}
+round(prop.table(table(d$workclass,d$Y),1),1)
+addmargins(round(prop.table(table(d$workclass,d$Y),1),1),2)
+```
+Here never worked and without pay is taken as base.and we create 5 dummies as follows:
+```{r}
+d=d %>%
+  mutate(wc_1=as.numeric(workclass==" Self-emp-inc"),
+         wc_2=as.numeric(workclass==" Federal-gov"),
+         wc_3=as.numeric(workclass %in% c(" Local-gov"," Self-emp-not-inc"," State-gov")),
+         wc_4=as.numeric(workclass==" Private"),
+         wc_5=as.numeric(workclass==" ?")) %>%
+  select(-workclass)
+```
+####combining similar category of variable education and making dummies:
+```{r}
+round(prop.table(table(d$education,d$Y),1),1)
+
+```
+here we create 6 dummies by combining similar categories.
+```{r}
+d=d %>%
+  mutate(edu_1=as.numeric(education %in% c(" 10th"," 11th"," 12th"," 7th-8th"," 9th")),
+         edu_2=as.numeric(education %in% c(" 1st-4th"," 5th-6th"," Preschool")),
+         edu_3=as.numeric(education %in% c(" Assoc-acdm"," HS-grad"," Some-college")),
+         edu_4=as.numeric(education ==" Assoc-voc"),
+         edu_5=as.numeric(education==" Bachelors"),
+         edu_6=as.numeric(education==" Masters")) %>%
+  select(-education)
+```
+
+####combining similar category of variable marital status and making dummies:
+```{r}
+round(prop.table(table(d$marital.status,d$Y),1),1)
+
+```
+
+```{r}
+d=d %>%
+  mutate(ms_1=as.numeric(marital.status==" Never-married"),
+         ms_2=as.numeric(marital.status %in% c(" Married-AF-spouse"," Married-civ-spouse"))) %>%
+  select(-marital.status)
+```
+
+####combining similar category of variable occupation and making dummies:
+
+```{r}
+round(prop.table(table(d$occupation,d$Y),1),1)
+
+```
+```{r}
+d=d %>%
+  mutate(oc_1=as.numeric(occupation==" Exec-managerial"),
+         oc_2=as.numeric(occupation==" Prof-specialty"),
+         oc_3=as.numeric(occupation %in% c(" Protective-serv"," Sales"," Tech-support")),
+         oc_4=as.numeric(occupation %in% c(" Craft-repair"," Transport-moving")),
+         oc_5=as.numeric(occupation %in% c(" Priv-house-serv"," Other-service"))) %>%
+  select(-occupation)
+```
+
+####combining similar category of variable native.country and making dummies:
+
+```{r}
+k=round(prop.table(table(d$native.country,d$Y),1),1)
+k
+```
+```{r}
+sort(k[,1]) #sorting makes it easier to combine
+```
+
+
+```{r}
+d=d %>%
+  mutate(nc_1=as.numeric(native.country %in% c(" Cambodia"," France"," India",
+                                               " Iran"," Japan"," Taiwan"," Yugoslavia")),
+         nc_2=as.numeric(native.country %in% c(" ?"," Canada"," China"," Cuba"," England",
+                                               " Germany"," Greece"," Hong"," Italy",
+                                               " Philippines")),
+         nc_3=as.numeric(native.country %in% c(" Hungary"," Ireland"," Poland"," Scotland",
+                                               " South"," Thailand"," United-States")),
+         nc_4=as.numeric(native.country %in% c(" Columbia"," Dominican-Republic",
+                                               " Guatemala"," Holand-Netherlands",
+                                               " Outlying-US(Guam-USVI-etc)"))) %>%
+  select(-native.country)
+```
+here 4 dummies are made for native.country.
+
+####hence we succesfully converted all character variables into dummy.
+```{r}
+glimpse(d)
+```
+###3. Dealing with flag variables.
+####used for non categorical data values(ie numeric data values)
+
+####Dealing with variable capital gain
+```{r}
+table(d$capital.gain)
+
+```
+Here 0 occurs 29k times.
+Hence lets find its percentage of occurance.
+This will give % of observations where capital.gain is 0
+```{r}
+sum(d$capital.gain==0)/nrow(d)
+
+```
+More than 90% values are 0 , lets go ahead create a flag variable for this:
+```{r}
+d=d %>%
+  mutate(cg_flag0=as.numeric(capital.gain==0))
+```
+hence wherever capital gain value is zero,it is mutated as 1,rest values take value 0.
+
+####similarly lets do for variable capital loss
+```{r}
+table(d$capital.loss)
+
+```
+lets find its percenatge fo ocuurance
+```{r}
+sum(d$capital.loss==0)/nrow(d)
+
+```
+95% more is capital loss values equal to zero.hence lets flag it.
+```{r}
+d=d %>%
+  mutate(cl_flag0=as.numeric(capital.loss==0))
+```
+
+###4. Converting the target Variable.(Y)
+```{r}
+d$Y=as.numeric(d$Y==" >50K")
+
+```
+All values where Y>=50 is made "1" else rest everything is made "0"
+
+```{r}
+glimpse(d)
+```
+
+###  *Data preparation is thus successfully done and can be further used for building models.*
